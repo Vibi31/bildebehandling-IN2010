@@ -43,13 +43,13 @@ def lin_std(img, std1):
     return f_out
 
 def lin_t(img, std1, mv1): #tar in bilde, ønsket sigma og middelverdi
-    std0, m0 = deviation(img), middel(img)
+    std0, mv0 = deviation(img), middel(img)
     C = std1/std0
     N,M = img.shape
     f_out = np.zeros((N,M))
     for i in range(N):
         for j in range(M):
-            f_out[i, j] = img[i, j] + (m1 - m0)*C
+            f_out[i, j] = mv1 + (img[i,j] - mv0) * (std1/std0)
     return f_out
 
 
