@@ -23,7 +23,6 @@ translate = np.array([[1, 0, len(f)//2],
                       [0, 1, len(f)//2],
                       [0, 0, 1]])
 
-
 degree = 33
 th =  degree*pi/180
 
@@ -37,14 +36,11 @@ scale = np.array([[0.5, 0, 0],
 
 new = rotate.dot(translate.dot(scale))
 
-g = transformation(f, rotate)
+g = transformation(f, new)
+
 
 plt.figure()
-plt.title("Original")
-plt.imshow(f, cmap='gray')
-
-plt.figure()
-plt.title("Transformed")
+plt.title("Translated")
 plt.imshow(g, cmap='gray')
 
 plt.show()
