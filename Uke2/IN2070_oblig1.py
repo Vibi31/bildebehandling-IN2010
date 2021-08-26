@@ -8,14 +8,14 @@ img = imread('portrett.png', as_gray=True)
 N, M = img.shape
 pix = N*M
 
-def middel(img):         #calculates mean value without using libraries        
+def middel(img):                #regner middel verdi (mu)      
     verdi_sum = 0
     for i in range (N):
         for j in range (M):
             verdi_sum += img[i,j]
     return verdi_sum/pix
 
-def deviation(img): #calculates deviation without using libraries
+def deviation(img):             #regner standard avvik (sigma)
     mx = middel(img)
     tot = 0
     for i in range (N):
@@ -23,33 +23,15 @@ def deviation(img): #calculates deviation without using libraries
             tot += (img[i,j] - mx)**2
     return sqrt(tot/pix)
 
-def lin_mean(img, m1): #tar in bilde og ønsket middel verdi
-    f_mean = np.zeros((N,M))
-    m0 = middel(img)
-    for i in range(N):
-        for j in range(M):
-            f_mean[i, j] = img[i, j] + (m1 - m0)
-    return f_mean
-
-def lin_std(img, std1):
-    std0 = deviation(img)
-    C = std1/std0
-    f_std = np.zeros((N,M))
-    for i in range(N):
-        for j in range(M):
-            f_std[i, j] = img[i, j]*C
-    return f_std
-
-def lin_t(img, std1, mv1): #tar in bilde, ønsket sigma og middelverdi
+def lin_t(img, std1, mv1):      #tar in bilde, ønsket sigma og middelverdi
     std0, mv0 = deviation(img), middel(img)
-    C = std1/std0
     f_lin = np.zeros((N,M))
     for i in range(N):
         for j in range(M):
             f_lin[i, j] = (img[i,j] - mv0) * (std1/std0) +  mv1
     return f_lin
 
-def coeff(p1, p2): #der p1 er punkte på portrett og p2 på maske
+def coeff(p1, p2):              #der p1 er punkter på portrett og p2 på masken
     x1, y1, x2, y2 , ones = [], [], [], [], [1,1,1]
     matrix_portrett = [y1, x1, ones]
     matrix_maske = [y2, x2, ones]
@@ -61,20 +43,22 @@ def coeff(p1, p2): #der p1 er punkte på portrett og p2 på maske
         x2.append(c)
         y2.append(d)
     co = (matrix_maske) @ np.linalg.inv(matrix_portrett)
-    #print('coefficient matrix:', co)
+    print('P matrix:', matrix_portrett)
+    print('M matrix:', matrix_maske)
+    print('coefficient matrix:', co)
     return co
 
 
-def T(x,y, coefficient):
+def T(x,y, coefficient):           #utfører transformen til å returnere nye koordinater T(x,y)
     A = [x, y, 1]
     return coefficient@A
 
 
-def affine(bilde, mapping, p1, p2): #samregistrering
-    a, b = mapping.shape #fra bilde vi skal mappe til
-    N, M = bilde.shape #potrett bilde
-    out = np.zeros((a,b)) #512x600
-    c = coeff(p1,p2) #beregner koeffisient matrisen
+def affine(bilde, mapping, p1, p2): #samregistrering, tar in portrett, maske, punkter på portrett og maske
+    a, b = mapping.shape    #fra bilde vi skal mappe til
+    N, M = bilde.shape      #potrett bilde
+    out = np.zeros((a,b))   #512x600
+    c = coeff(p1,p2)        #beregner koeffisient matrisen
     for x in range(N):
         for y in range(M):
             x_new, y_new, n = T(x,y,c)
@@ -82,12 +66,12 @@ def affine(bilde, mapping, p1, p2): #samregistrering
                 out[int(x_new), int(y_new)] = bilde[x, y]
     return out
 
-p1 = [[84,88], [120,67], [129, 108]] #punkter fra potrett (øyner og munn)
-p2 = [[170,259], [342,259], [256,441]]#punkter på maske vi skal mappe til
+p1 = [[84,88], [120,67], [129, 108]]        #punkter fra potrett (øyner og midten av munnen)
+p2 = [[170,259], [342,259], [256,441]]      #punkter på maske vi skal mappe til (øyner og midten av munnen)
 
 
 #oppgave 2 
-def bilin(f_in, f_portrett, p1, p2): #bilinear interpolasjon, koden funker ikke, har ikke fullført oppgave
+def bilin(f_in, f_portrett, p1, p2): #bilinear interpolasjon
     N, M = f_in.shape #potrett bilde som ble transformert
     f_ut = np.zeros((N,M)) 
     c_inv = np.linalg.inv(coeff(p1,p2))
@@ -117,17 +101,19 @@ img = imread('portrett.png', as_gray=True)
 maske = imread('geometrimaske.png', as_gray= True)
 
 portrett_kont = lin_t(img, 64, 127) #linear gråtone transformation, tar in sigma og 
-img_n = affine(portrett_kont, maske, p1, p2)
-im_bilin = bilin(img_n, portrett_kont, p1, p2)
-im_nabo = nabo(img_n, portrett_kont, p1, p2)
+
+img_n = affine(portrett_kont, maske, p1, p2) #utfører forlengs trasnformen
+
+im_bilin = bilin(img_n, portrett_kont, p1, p2)  # baklengs med bilinear transform
+im_nabo = nabo(img_n, portrett_kont, p1, p2)    # baklengs med nærmest nabo
 
 print('middelverdi (original)', middel(img))
 #print(np.mean(img)) #sjekker med ferdig pakke
 print('sigma (original):', deviation(img))
 #print(np.std(img)) #sjekker med ferdig pakke
 
-print('sigma (new image):', deviation(img_n))
-print('middelverdi (new image):', middel(img_n))
+print('sigma (new image):', round(deviation(portrett_kont)))
+print('middelverdi (new image):', round(middel(portrett_kont)))
 
 
 plt.figure()
@@ -136,22 +122,19 @@ plt.imshow(img, cmap='gray', vmin=0, vmax=255)
 
 plt.figure()
 plt.title("Gråtone transformert")
-plt.imshow(portrett_kont, cmap='gray', vmin=0, vmax=255)
+plt.imshow(portrett_kont, cmap='gray')
 plt.show()
 
 plt.figure()
 plt.title("Mapped")
-plt.imshow(img_n, cmap= 'gray', vmin=0, vmax=255)
+plt.imshow(img_n, cmap= 'gray')
 plt.show()
 
 plt.figure()
-plt.title("Bilinær interpolasjon")
-plt.imshow(im_bilin, cmap= 'gray', vmin=0, vmax=255)
+plt.title("Bilineær interpolasjon")
+plt.imshow(im_bilin, cmap= 'gray')
 
 plt.figure()
 plt.title("Nabo")
-plt.imshow(im_nabo, cmap= 'gray', vmin=0, vmax=255)
+plt.imshow(im_nabo, cmap= 'gray')
 plt.show()
-
-
-

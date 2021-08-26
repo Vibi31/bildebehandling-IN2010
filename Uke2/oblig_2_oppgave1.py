@@ -7,6 +7,7 @@ img = imread('cow.png', as_gray=True)
 N, M = img.shape
 pix = N*M
 
+
 def filter(N):
     mv_filter = np.zeros((N,N))         #tom filter array med NxN størelse 
     for i in range(N):
@@ -24,7 +25,7 @@ filt_f = np.fft.rfft2(mv_15, s=(N, M))                  #real Fast Fourier Trans
 image_f = np.fft.rfft2(img)                             #real Fast Fourier Transform 2D (image)
 img_f = np.fft.irfft2(image_f*filt_f)                   #invers real fourier transform (irfft)
 
-"""
+
 plt.figure()
 plt.title("Original")
 plt.imshow(img, cmap='gray', vmin=0, vmax=255)
@@ -42,7 +43,6 @@ plt.show()
 
 
 
-"""
 #Oppgave 1.3
 import time
 
